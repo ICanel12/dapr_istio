@@ -11,6 +11,10 @@
 // limitations under the License.
 //
 
+const protocol = process.env.DAPR_PROTOCOL ?? "http";
+const DAPR_HOST = process.env.DAPR_HOST ?? "localhost";
+const DAPR_STATE_STORE_NAME = 'statestore';
+
 const express = require('express');
 const bodyParser = require('body-parser');
 require('isomorphic-fetch');
