@@ -31,6 +31,7 @@ const port = process.env.APP_PORT ?? "3000";
 
 
   let sePuedeVotar = true;
+  let seCerroFase = false;
 
 app.get('/order', async (_req, res) => {
     try {
@@ -90,7 +91,7 @@ app.listen(port, () => console.log(`Node App listening on port ${port}!`));
 app.post('/candidatos', (req, res) => {
 
     if (!sePuedeVotar) {
-        res.status(400).send('Se ha cerrado las votaciones');
+        res.status(400).send('Se ha cerrado la parte de agregar candidato');
         return;
       }
 
@@ -106,7 +107,7 @@ app.post('/candidatos', (req, res) => {
 //PASO 2
 app.post('/cerrarfase', (req, res) => {
     sePuedeVotar = false; // Asignar el valor false a la variable global
-  res.status(200).send('Se ha cerrado la fase de votación');
+  res.status(200).send('Se ha cerrado la fase para crear candidatos');
 });
 
 
@@ -114,18 +115,31 @@ app.post('/cerrarfase', (req, res) => {
 app.post('/votar', (req, res) => {
     const { id_votante, nombre_candidato, es_nulo } = req.body;
   
+    if (seCerroFase) {
+        res.status(400).send('Se ha cerrado las votaciones');
+        return;
+    }else{
     // Verificar si el votante ya ha votado anteriormente
     if (yaHaVotado(id_votante)) {
-      res.status(400).send('Ya has votado anteriormente');
-      return;
+        res.status(400).send('Intento de fraude');
+        return;
+      }
+    
+      // Registrar el voto en la base de datos
+      registrarVoto(id_votante, nombre_candidato, es_nulo);
+    
+      res.status(200).send('Voto registrado correctamente');
     }
-  
-    // Registrar el voto en la base de datos
-    registrarVoto(id_votante, nombre_candidato, es_nulo);
-  
-    res.status(200).send('Voto registrado correctamente');
+
+
   });
 
+
+  //PASO 4
+  app.post('/cerrarfasevotacion', (req, res) => {
+    seCerroFase = true; 
+  res.status(200).send('Se ha cerrado la fase de votación');
+});
 
 
   function crearCandidato(nombre, apellido, correo, telefono, posicion) {
@@ -160,5 +174,5 @@ app.post('/votar', (req, res) => {
 
 
   function yaHaVotado(id_votante) {
-    return votos.includes(id_votante)
+    return votos.find(voto => voto.id_votante === id_votante) !== undefined;
   }
