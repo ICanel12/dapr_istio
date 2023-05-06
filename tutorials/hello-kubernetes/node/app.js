@@ -203,8 +203,6 @@ app.post('/votar', (req, res) => {
     return votos.find(voto => voto.id_votante === id_votante) !== undefined;
   }
 
-
-
   //Estadística
 
   app.get('/conteo-votos', (req, res) => {
