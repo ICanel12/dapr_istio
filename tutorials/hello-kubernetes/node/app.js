@@ -83,7 +83,7 @@ app.get('/ports', (_req, res) => {
     res.status(200).send({DAPR_HTTP_PORT: daprPort, DAPR_GRPC_PORT: daprGRPCPort })
 });
 
-app.listen(port, () => console.log(`Node App listening on port ${port}!`));
+app.listen(port, () => console.log(`Node App está escuchando en el puerto ${port}!`));
 
 
 
@@ -99,7 +99,7 @@ app.post('/candidatos', (req, res) => {
     const nuevoCandidato = crearCandidato(nombre, apellido, correo, telefono, posicion)
   
     // Enviar una respuesta con el nuevo registro creado
-    res.status(201).json(nuevoCandidato)
+    res.status(201).json('Se ha creado un nuevo candidato');
   })
 
 
@@ -176,3 +176,22 @@ app.post('/votar', (req, res) => {
   function yaHaVotado(id_votante) {
     return votos.find(voto => voto.id_votante === id_votante) !== undefined;
   }
+
+
+
+  //Estadística
+
+  app.get('/conteo-votos', (req, res) => {
+    let conteoVotosPorCandidato = votos.reduce(function (acumulador, voto) {
+      let candidato = voto.nombre_candidato;
+      if (!acumulador[candidato]) {
+        acumulador[candidato] = 0;
+      }
+      acumulador[candidato]++;
+      return acumulador;
+    }, {});
+    res.json(conteoVotosPorCandidato);
+  });
+  
+
+
