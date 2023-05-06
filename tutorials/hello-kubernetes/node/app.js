@@ -17,6 +17,9 @@ require('isomorphic-fetch');
 
 const app = express();
 app.use(bodyParser.json());
+const candidatos = [];
+const votantesQueHanVotado = [];
+let votos = [];
 
 // These ports are injected automatically into the container.
 const daprPort = process.env.DAPR_HTTP_PORT ?? "3500"; 
@@ -25,6 +28,9 @@ const daprGRPCPort = process.env.DAPR_GRPC_PORT ?? "50001";
 const stateStoreName = `statestore`;
 const stateUrl = `http://localhost:${daprPort}/v1.0/state/${stateStoreName}`;
 const port = process.env.APP_PORT ?? "3000";
+
+
+  let sePuedeVotar = true;
 
 app.get('/order', async (_req, res) => {
     try {
@@ -77,3 +83,82 @@ app.get('/ports', (_req, res) => {
 });
 
 app.listen(port, () => console.log(`Node App listening on port ${port}!`));
+
+
+
+//PASO 1
+app.post('/candidatos', (req, res) => {
+
+    if (!sePuedeVotar) {
+        res.status(400).send('Se ha cerrado las votaciones');
+        return;
+      }
+
+    const { nombre, apellido, correo, telefono, posicion } = req.body
+    const nuevoCandidato = crearCandidato(nombre, apellido, correo, telefono, posicion)
+  
+    // Enviar una respuesta con el nuevo registro creado
+    res.status(201).json(nuevoCandidato)
+  })
+
+
+
+//PASO 2
+app.post('/cerrarfase', (req, res) => {
+    sePuedeVotar = false; // Asignar el valor false a la variable global
+  res.status(200).send('Se ha cerrado la fase de votación');
+});
+
+
+//PASO 3
+app.post('/votar', (req, res) => {
+    const { id_votante, nombre_candidato, es_nulo } = req.body;
+  
+    // Verificar si el votante ya ha votado anteriormente
+    if (yaHaVotado(id_votante)) {
+      res.status(400).send('Ya has votado anteriormente');
+      return;
+    }
+  
+    // Registrar el voto en la base de datos
+    registrarVoto(id_votante, nombre_candidato, es_nulo);
+  
+    res.status(200).send('Voto registrado correctamente');
+  });
+
+
+
+  function crearCandidato(nombre, apellido, correo, telefono, posicion) {
+    // Crear un objeto con los datos del candidato
+    const nuevoCandidato = {
+      nombre,
+      apellido,
+      correo,
+      telefono,
+      posicion
+    }
+  
+    // Agregar el nuevo candidato a la variable global de candidatos
+    candidatos.push(nuevoCandidato)
+  
+    console.log("Candidato Creado")
+  }
+  
+
+  function registrarVoto(id_votante, nombre_candidato, es_nulo) {
+    let fecha = new Date().toISOString()
+
+    let voto = {
+      id_votante,
+      nombre_candidato,
+      es_nulo,
+      fecha
+    }
+    
+    votos.push(voto)
+  }
+
+
+  function yaHaVotado(id_votante) {
+    return votos.includes(id_votante)
+  }
