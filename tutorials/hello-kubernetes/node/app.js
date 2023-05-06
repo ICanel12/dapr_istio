@@ -115,21 +115,29 @@ app.post('/cerrarfase', (req, res) => {
 app.post('/votar', (req, res) => {
     const { id_votante, nombre_candidato, es_nulo } = req.body;
   
-    if (seCerroFase) {
-        res.status(400).send('Se ha cerrado las votaciones');
-        return;
-    }else{
-    // Verificar si el votante ya ha votado anteriormente
-    if (yaHaVotado(id_votante)) {
-        res.status(400).send('Intento de fraude');
-        return;
+    if (!sePuedeVotar) {
+        if (seCerroFase) {
+            res.status(400).send('Se ha cerrado las votaciones');
+            return;
+        }else{
+        // Verificar si el votante ya ha votado anteriormente
+        if (yaHaVotado(id_votante)) {
+            res.status(400).send('Intento de fraude');
+            return;
+          }
+        
+          // Registrar el voto en la base de datos
+          registrarVoto(id_votante, nombre_candidato, es_nulo);
+        
+          res.status(200).send('Voto registrado correctamente');
+        }
+      }else{
+
+        res.status(400).send('Se debe cerrar la fase de candidatos');
       }
-    
-      // Registrar el voto en la base de datos
-      registrarVoto(id_votante, nombre_candidato, es_nulo);
-    
-      res.status(200).send('Voto registrado correctamente');
-    }
+
+
+
 
 
   });
