@@ -30,7 +30,8 @@ const stateUrl = `http://localhost:${daprPort}/v1.0/state/${stateStoreName}`;
 const port = process.env.APP_PORT ?? "3000";
 
 
-  let sePuedeVotar = true;
+    let faseCandidatos = false;
+    let faseVotacion = false;
   let seCerroFase = false;
 
 app.get('/order', async (_req, res) => {
@@ -88,25 +89,42 @@ app.listen(port, () => console.log(`Node App está escuchando en el puerto ${por
 
 
 //PASO 1
+
+app.post('/AbrirFaseCandidatos', (req, res) => {
+    faseCandidatos = true; 
+  res.status(200).send('Se ha abierto la fase para crear candidatos');
+});
+
+
 app.post('/candidatos', (req, res) => {
 
-    if (!sePuedeVotar) {
+    if (!faseCandidatos) {
         res.status(400).send('Se ha cerrado la parte de agregar candidato');
         return;
       }
 
-    const { nombre, apellido, correo, telefono, posicion } = req.body
-    const nuevoCandidato = crearCandidato(nombre, apellido, correo, telefono, posicion)
-  
-    // Enviar una respuesta con el nuevo registro creado
-    res.status(201).json('Se ha creado un nuevo candidato');
+      if (faseCandidatos) {
+        const { nombre, apellido, correo, telefono, posicion } = req.body
+        const nuevoCandidato = crearCandidato(nombre, apellido, correo, telefono, posicion)
+      
+        // Enviar una respuesta con el nuevo registro creado
+        res.status(201).json('Se ha creado un nuevo candidato');
+      }else{
+        res.status(400).send('No se ha abierto la fase para ingresar candidatos');
+      }
   })
 
 
 
 //PASO 2
-app.post('/cerrarfase', (req, res) => {
-    sePuedeVotar = false; // Asignar el valor false a la variable global
+
+app.post('/AbrirFaseVotacion', (req, res) => {
+    faseVotacion = true; // Asignar el valor false a la variable global
+  res.status(200).send('Se ha abierto la fase de votación');
+});
+
+app.post('/CerrarFase', (req, res) => {
+    faseCandidatos = false; // Asignar el valor false a la variable global
   res.status(200).send('Se ha cerrado la fase para crear candidatos');
 });
 
@@ -115,30 +133,30 @@ app.post('/cerrarfase', (req, res) => {
 app.post('/votar', (req, res) => {
     const { id_votante, nombre_candidato, es_nulo } = req.body;
   
-    if (!sePuedeVotar) {
-        if (seCerroFase) {
-            res.status(400).send('Se ha cerrado las votaciones');
-            return;
-        }else{
-        // Verificar si el votante ya ha votado anteriormente
-        if (yaHaVotado(id_votante)) {
-            res.status(400).send('Intento de fraude');
-            return;
+    if(faseVotacion){
+        if (!faseCandidatos) {
+            if (seCerroFase) {
+                res.status(400).send('Se ha cerrado las votaciones');
+                return;
+            }else{
+            // Verificar si el votante ya ha votado anteriormente
+            if (yaHaVotado(id_votante)) {
+                res.status(400).send('Intento de fraude');
+                return;
+              }
+            
+              // Registrar el voto en la base de datos
+              registrarVoto(id_votante, nombre_candidato, es_nulo);
+            
+              res.status(200).send('Voto registrado correctamente');
+            }
+          }else{
+    
+            res.status(400).send('Se debe cerrar la fase de candidatos');
           }
-        
-          // Registrar el voto en la base de datos
-          registrarVoto(id_votante, nombre_candidato, es_nulo);
-        
-          res.status(200).send('Voto registrado correctamente');
-        }
-      }else{
-
-        res.status(400).send('Se debe cerrar la fase de candidatos');
-      }
-
-
-
-
+    }else{
+        res.status(400).send('Se debe abrir fase de votación');
+    }
 
   });
 
