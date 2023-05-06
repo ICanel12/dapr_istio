@@ -108,8 +108,8 @@ app.post('/candidatos', (req, res) => {
       }
 
       if (faseCandidatos) {
-        const { nombre, apellido, correo, telefono, posicion } = req.body
-        const nuevoCandidato = crearCandidato(nombre, apellido, correo, telefono, posicion)
+        const { nombre, apellido, correo, telefono, partido } = req.body
+        const nuevoCandidato = crearCandidato(nombre, apellido, correo, telefono, partido)
       
         // Enviar una respuesta con el nuevo registro creado
         res.status(201).json('Se ha creado un nuevo candidato');
@@ -172,14 +172,14 @@ app.post('/votar', (req, res) => {
 });
 
 
-  function crearCandidato(nombre, apellido, correo, telefono, posicion) {
+  function crearCandidato(nombre, apellido, correo, telefono, partido) {
     // Crear un objeto con los datos del candidato
     const nuevoCandidato = {
       nombre,
       apellido,
       correo,
       telefono,
-      posicion
+      partido
     }
   
     // Agregar el nuevo candidato a la variable global de candidatos
